@@ -93,3 +93,32 @@ Both partners contribute to experimental design and report writing.
 - [ ] Basic SIR-on-network prototype (post W7 lab)
 - [ ] Behavioural rule implementations
 - [ ] Experimental sweep setup
+
+---
+
+## Setup & Usage (scaffold v0.1)
+
+```bash
+pip install -r requirements.txt
+python -m pytest tests/ -q
+```
+
+Quick run:
+
+```python
+from src.simulation import SimParams, run_coupled
+out = run_coupled(SimParams(topology="ws", n=500, seed=0, rule="observation", alpha=0.8, delta=0.1))
+print(out["final_size"], out["peak"], out["waves"], out["social_cost"])
+```
+
+Pilot sweep (cached, parallel):
+
+```python
+from src.experiments import grid_configs, run_sweep
+cfgs = grid_configs(topologies=("ws","ba"), rules=("observation","imitation","broadcast"),
+                    alphas=(0.0,0.5,1.0), deltas=(0.0,0.1,0.3), seeds=range(5), n=300)
+df = run_sweep(cfgs, "data/pilot.csv")
+```
+
+Notebooks: `notebooks/01_validation.ipynb`, `02_sweep.ipynb`, `03_figures.ipynb`.
+Layout follows rubric spec: `src/ utils/ data/ notebooks/ requirements.txt README.md`.
