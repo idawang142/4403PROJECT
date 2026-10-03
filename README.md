@@ -54,6 +54,19 @@ At this stage (end of Week 5), we have covered:
 | Empirical (TBD) | A real-world snapshot to ground the model, likely the SNAP Facebook dataset used in W3 |
 
 ---
+### Update — 3 October 2026
+
+The table above records our original plan. Our final network selection is **WS, BA and ER**, with ER replacing the proposed empirical Facebook network.
+
+| Final topology | Default configuration |
+|----------------|-----------------------|
+| Watts–Strogatz (WS) | k=6, rewiring probability=0.1 |
+| Barabási–Albert (BA) | m=3, giving a mean degree approaching 6 |
+| Erdős–Rényi (ER) | p=6/(n-1), giving an expected mean degree of 6 |
+
+We chose synthetic networks for reproducibility, approximate mean-degree matching and manageable runtime.
+
+**Limitation:** We have not validated the model on empirical contact networks. These synthetic networks do not capture all real-world contact patterns, so the findings should not be treated as direct predictions for real populations.
 
 ## Preliminary Metrics
 
