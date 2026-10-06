@@ -1,8 +1,8 @@
 """Render the five report figures from frozen sweep summaries.
 
-To refresh summaries from Kaggle's raw sweep CSVs::
+To refresh summaries from the run-level sweep CSVs in data/::
 
-    python report/render_figures.py --data-dir /path/to/kaggle/data
+    python report/render_figures.py --data-dir data
 
 Without --data-dir, the committed CSVs in report/data/ are used. All PNGs
 are written to figures/report/ at 300 dpi. The dynamics panel is rerun from

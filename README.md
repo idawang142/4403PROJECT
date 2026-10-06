@@ -124,14 +124,14 @@ out = run_coupled(SimParams(topology="ws", n=500, seed=0, rule="observation", al
 print(out["final_size"], out["peak"], out["waves"], out["social_cost"])
 ```
 
-Pilot sweep (cached, parallel):
+Frozen sweeps (exact committed recipes, resume-safe; ~30-45 min on 12 workers):
 
-```python
-from src.experiments import grid_configs, run_sweep
-cfgs = grid_configs(topologies=("ws","ba"), rules=("observation","imitation","broadcast"),
-                    alphas=(0.0,0.5,1.0), deltas=(0.0,0.1,0.3), seeds=range(5), n=300)
-df = run_sweep(cfgs, "data/pilot.csv")
+```bash
+python -m src.run_sweeps --all --workers 12 --out-dir data
+python -m src.run_sweeps --which beta_sweep --workers 4
 ```
+
+Grids: `pilot_full` (9,090 configs: 3 topologies x 5 rules x 5 alpha x 5 delta x 30 seeds), `zoom_h2` (3,600: equal-budget hub vs uniform), `beta_sweep` (600: 5 beta values x 20 seeds). Re-running skips completed keys, so long grids can be built across several invocations. See `notebooks/02_sweep.ipynb` for the design and `notebooks/04_analysis.ipynb` for the analysis.
 
 Notebooks: `notebooks/01_validation.ipynb`, `02_sweep.ipynb`, `03_figures.ipynb`.
 Layout follows rubric spec: `src/ utils/ data/ notebooks/ requirements.txt README.md`.

@@ -22,7 +22,7 @@ import numpy as np
 
 from .behaviour import update_fear
 from .metrics import count_waves, oscillation_index, summarize_run
-from .networks import make_graph, to_arrays
+from .networks import make_graph, to_arrays, top_degree_mask
 
 
 @dataclass
@@ -64,10 +64,7 @@ def run_coupled(p: SimParams) -> dict:
 
     hub_mask = None
     if p.rule == "broadcast_hub":
-        k = max(1, int(n * p.hub_frac))
-        hub_idx = np.argsort(degree)[-k:]
-        hub_mask = np.zeros(n, dtype=bool)
-        hub_mask[hub_idx] = True
+        hub_mask = top_degree_mask(degree, p.hub_frac)
 
     prev_series, caut_series, inf_series = [], [], []
     cautious = np.zeros(n, dtype=bool)

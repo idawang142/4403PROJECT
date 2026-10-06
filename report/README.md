@@ -5,10 +5,10 @@ copy-ready descriptions, sample counts, axis units, and cautions;
 `limitations.md` has the draft report paragraph.
 
 The four small `report/data/*_summary.csv` files are the committed plotting
-inputs. They were aggregated from the Kaggle sweep outputs
-`pilot_full.csv` (9,090 rows), `zoom_h2.csv` (3,600 rows), and
-`beta_sweep.csv` (600 rows); the raw run-level files are not part of this
-figure-freeze PR. `timeseries.png` is simulated again from the merged engine
+inputs, aggregated from the run-level sweep CSVs in `data/`
+(`pilot_full.csv`, `zoom_h2.csv`, `beta_sweep.csv`). Those run-level files
+are regenerated with
+`python -m src.run_sweeps --all --workers 12 --out-dir data`. `timeseries.png` is simulated again from the merged engine
 at seed 0. The summaries contain mean values, sample SD where shown, and
 counts (`runs`) so every plotted point remains auditable.
 
@@ -19,10 +19,10 @@ figures from the committed summaries:
 python report/render_figures.py
 ```
 
-To rebuild the summaries **and** figures from the original Kaggle CSVs:
+To rebuild the summaries **and** figures from the run-level CSVs:
 
 ```bash
-python report/render_figures.py --data-dir /path/to/kaggle/output/data
+python report/render_figures.py --data-dir data
 ```
 
 All figure code uses the Agg backend and saves with `dpi=300`. The common

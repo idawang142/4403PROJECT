@@ -84,7 +84,7 @@ def test_hub_budget_saturates_at_top_ten_percent(monkeypatch,budget):
     graph=nx.star_graph(19)
     monkeypatch.setattr(sim,"make_graph",lambda *a,**k: graph)
     expected=np.zeros(20,dtype=bool)
-    expected[np.argsort([d for _,d in graph.degree()])[-2:]]=True
+    expected[np.argsort([d for _,d in graph.degree()], kind="stable")[-2:]]=True
     original=sim.update_fear
     seen=[]
     def checked(*a,**kw):
@@ -98,3 +98,14 @@ def test_hub_budget_saturates_at_top_ten_percent(monkeypatch,budget):
         rule="broadcast_hub",p_comply=budget,hub_frac=.1,prev_thresh=0.,max_steps=3))
     assert seen
     assert max(out["caut_series"]) == 2
+
+
+def test_hub_tie_break_is_node_order_deterministic():
+    from src.networks import top_degree_mask
+    degree = np.array([6., 7., 7., 7., 5.])
+    mask = top_degree_mask(degree, hub_frac=0.4)
+    assert mask.sum() == 2
+    # stable ascending order keeps node order among the tied 7s, so the
+    # top-2 are the highest-index tied nodes, on every platform
+    np.testing.assert_array_equal(mask, [False, False, True, True, False])
+    np.testing.assert_array_equal(mask, top_degree_mask(degree, hub_frac=0.4))

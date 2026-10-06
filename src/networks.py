@@ -60,3 +60,21 @@ def to_arrays(G: nx.Graph):
         A[j, i] = 1.0
     degree = A.sum(axis=1)
     return A, degree, nodes
+
+
+def top_degree_mask(degree, hub_frac: float = 0.1):
+    """Boolean mask of the top hub_frac fraction of nodes by degree.
+
+    Ties resolve by node order (stable sort), so the selection is
+    deterministic across numpy versions and platforms. Without this,
+    the default quicksort tie order can pick different hub sets on
+    different machines (all 90 topology/seed combos at N=1000 straddle
+    a tie at the top-10% cutoff), silently changing hub-policy runs.
+    """
+    degree = np.asarray(degree, dtype=float)
+    n = degree.shape[0]
+    k = max(1, int(n * hub_frac))
+    order = np.argsort(degree, kind="stable")
+    mask = np.zeros(n, dtype=bool)
+    mask[order[-k:]] = True
+    return mask
