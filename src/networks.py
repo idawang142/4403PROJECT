@@ -19,6 +19,12 @@ def make_er(n: int = 1000, p: float | None = None, seed: int = 0,
 
 
 def make_ws(n: int = 1000, k: int = 6, p: float = 0.1, seed: int = 0) -> nx.Graph:
+    """WS small-world graph; clamps k for tiny n (networkx needs k <= n)."""
+    if n < 1:
+        raise ValueError(f"WS needs n>=1 nodes, got n={n}")
+    if k > n:
+        # largest valid even k keeps the ring-lattice meaning for n >= 2
+        k = n if n % 2 == 0 else n - 1
     return nx.watts_strogatz_graph(n, k, p, seed=seed)
 
 
@@ -41,8 +47,8 @@ def make_graph(topology: str, n: int = 1000, seed: int = 0, **kwargs) -> nx.Grap
 def to_arrays(G: nx.Graph):
     """Convert graph to dense adjacency + degree arrays.
 
-    Returns (A, degree) where A is float32 (N,N) adjacency, degree is (N,) float.
-    Nodes are ordered by G.nodes() order; caller must keep the mapping.
+    Returns (A, degree, nodes) where A is float32 (N,N) adjacency,
+    degree is (N,) float, and nodes lists node labels in index order.
     """
     nodes = list(G.nodes())
     index = {n: i for i, n in enumerate(nodes)}

@@ -1,4 +1,7 @@
 """Smoke checks: boundaries + determinism (run with pytest or python -m pytest)."""
+import numpy as np
+
+from src.networks import make_graph
 from src.simulation import SimParams, run_coupled
 
 
@@ -23,3 +26,16 @@ def test_behaviour_reduces_or_equal():
     beh = run_coupled(SimParams(topology="ws", n=300, seed=3, rule="observation",
                                 alpha=1.0, delta=0.05))
     assert beh["final_size"] <= base["final_size"] + 0.05
+
+
+def test_ws_small_n_no_crash():
+    for n in range(1, 7):
+        G = make_graph("ws", n=n, seed=0)
+        assert G.number_of_nodes() == n
+
+
+def test_all_rules_run_finite():
+    for rule in ("none", "observation", "imitation", "broadcast", "broadcast_hub"):
+        out = run_coupled(SimParams(topology="ws", n=100, seed=5, rule=rule))
+        assert np.isfinite(out["final_size"]) and np.isfinite(out["social_cost"])
+        assert 0.0 <= out["final_size"] <= 1.0
