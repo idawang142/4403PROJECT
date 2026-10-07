@@ -36,7 +36,9 @@ def test_complete_graph_infects_everyone_in_one_step(monkeypatch):
     out = sim.run_coupled(sim.SimParams(n=10, init_infected=1, beta=1.,
                           gamma=0., rule="none", max_steps=1))
     assert out["duration"] == 1
-    assert out["final_size"] == 1.
+    assert out["cumulative_size"] == 1.
+    assert not out["extinct"]
+    assert np.isnan(out["final_size"])
 
 
 def test_alpha_zero_matches_none_exactly():
@@ -68,7 +70,7 @@ def test_theta_equality_not_cautious(monkeypatch):
     monkeypatch.setattr(sim, "update_fear", lambda fear,*a,**k: np.full_like(fear,.500001))
     out=sim.run_coupled(sim.SimParams(n=10, init_infected=1, beta=0.,
                         gamma=0., theta=.5, max_steps=2))
-    assert out["caut_series"][1] == 10
+    assert out["caut_series"][0] == 10
 
 
 def test_max_steps_cap():
@@ -76,7 +78,10 @@ def test_max_steps_cap():
                         gamma=0., rule="none", max_steps=7))
     assert out["duration"] == 7
     np.testing.assert_array_equal(out["prev_series"], np.full(7,.1))
-    assert out["final_size"] == .1
+    assert out["cumulative_size"] == .1
+    assert not out["extinct"]
+    assert out["remaining_infected"] == 1
+    assert np.isnan(out["final_size"])
 
 
 @pytest.mark.parametrize("budget", [.1,.5,1.])
@@ -84,7 +89,7 @@ def test_hub_budget_saturates_at_top_ten_percent(monkeypatch,budget):
     graph=nx.star_graph(19)
     monkeypatch.setattr(sim,"make_graph",lambda *a,**k: graph)
     expected=np.zeros(20,dtype=bool)
-    expected[np.argsort([d for _,d in graph.degree()])[-2:]]=True
+    expected[np.argsort([d for _,d in graph.degree()], kind="stable")[-2:]]=True
     original=sim.update_fear
     seen=[]
     def checked(*a,**kw):
@@ -98,3 +103,19 @@ def test_hub_budget_saturates_at_top_ten_percent(monkeypatch,budget):
         rule="broadcast_hub",p_comply=budget,hub_frac=.1,prev_thresh=0.,max_steps=3))
     assert seen
     assert max(out["caut_series"]) == 2
+
+
+def test_hub_tie_break_is_node_order_deterministic(monkeypatch):
+    graph = nx.cycle_graph(5)  # equal degrees make the cutoff a tie
+    monkeypatch.setattr(sim, "make_graph", lambda *a, **k: graph)
+    original = sim.update_fear
+    masks = []
+
+    def capture(*args, **kwargs):
+        masks.append(kwargs["hub_mask"].copy())
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(sim, "update_fear", capture)
+    sim.run_coupled(sim.SimParams(n=5, init_infected=5, beta=0, gamma=1,
+        rule="broadcast_hub", p_comply=0.4, hub_frac=0.4, max_steps=1))
+    np.testing.assert_array_equal(masks[0], [False, False, False, True, True])

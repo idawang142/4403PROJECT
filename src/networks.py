@@ -14,22 +14,20 @@ def make_er(n: int = 1000, p: float | None = None, seed: int = 0,
     Explicit p still respected.
     """
     if p is None:
-        p = target_k / max(1, n - 1)
+        p = min(1.0, target_k / max(1, n - 1))
     return nx.erdos_renyi_graph(n, p, seed=seed)
 
 
 def make_ws(n: int = 1000, k: int = 6, p: float = 0.1, seed: int = 0) -> nx.Graph:
-    """WS small-world graph; clamps k for tiny n (networkx needs k <= n)."""
-    if n < 1:
-        raise ValueError(f"WS needs n>=1 nodes, got n={n}")
-    if k > n:
-        # largest valid even k keeps the ring-lattice meaning for n >= 2
-        k = n if n % 2 == 0 else n - 1
+    k = min(k, n - 1)
+    k -= k % 2
     return nx.watts_strogatz_graph(n, k, p, seed=seed)
 
 
 def make_ba(n: int = 1000, m: int = 3, seed: int = 0) -> nx.Graph:
-    return nx.barabasi_albert_graph(n, m, seed=seed)
+    if n == 1:
+        return nx.empty_graph(1)
+    return nx.barabasi_albert_graph(n, min(m, n - 1), seed=seed)
 
 
 def make_graph(topology: str, n: int = 1000, seed: int = 0, **kwargs) -> nx.Graph:
@@ -45,18 +43,12 @@ def make_graph(topology: str, n: int = 1000, seed: int = 0, **kwargs) -> nx.Grap
 
 
 def to_arrays(G: nx.Graph):
-    """Convert graph to dense adjacency + degree arrays.
+    """Convert graph to sparse CSR adjacency and a one-dimensional degree array.
 
-    Returns (A, degree, nodes) where A is float32 (N,N) adjacency,
-    degree is (N,) float, and nodes lists node labels in index order.
+    Returns (A, degree, nodes); A is float32 CSR and degree is (N,) float.
+    Nodes are ordered by G.nodes() order; caller must keep the mapping.
     """
     nodes = list(G.nodes())
-    index = {n: i for i, n in enumerate(nodes)}
-    n = len(nodes)
-    A = np.zeros((n, n), dtype=np.float32)
-    for u, v in G.edges():
-        i, j = index[u], index[v]
-        A[i, j] = 1.0
-        A[j, i] = 1.0
-    degree = A.sum(axis=1)
+    A = nx.to_scipy_sparse_array(G, nodelist=nodes, dtype=np.float32, format="csr")
+    degree = np.asarray(A.sum(axis=1)).ravel()
     return A, degree, nodes

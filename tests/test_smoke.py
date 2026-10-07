@@ -10,9 +10,10 @@ def test_beta_zero_no_spread():
     assert out["final_size"] <= 10 / 200 + 1e-9
 
 
-def test_gamma_one_fast_recovery():
-    out = run_coupled(SimParams(topology="ws", n=200, seed=1, gamma=1.0, rule="none"))
-    assert out["duration"] <= 5
+def test_gamma_one_recovers_initial_infections():
+    out = run_coupled(SimParams(topology="ws", n=200, seed=1, gamma=1.0, beta=0.0, rule="none"))
+    assert out["duration"] == 1
+    assert out["extinct"] and out["remaining_infected"] == 0
 
 
 def test_determinism():

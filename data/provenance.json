@@ -1,0 +1,13 @@
+{
+  "model_id": "62be400720b2e3326ed5fdc87602e2012527cabdd83e9376d83d5b52c2ba19de",
+  "versions": {
+    "numpy": "2.3.3",
+    "pandas": "2.3.3",
+    "scipy": "1.16.2",
+    "networkx": "3.5",
+    "matplotlib": "3.10.7"
+  },
+  "safety_limit_steps": 5000,
+  "cost_units": "edge-steps",
+  "primary_cost": "social_cost_degree"
+}

@@ -10,9 +10,11 @@ Transmission model (fast, vectorized):
   infection prob p_i = 1 - escape1^c1 * escape2^c2.
   One uniform random per susceptible node decides infection (not per edge).
 - Recovery: I -> R with prob gamma each step.
-- Cost per step: cautious_nodes * mean_degree * q / 2 (edge-days forgone).
+- Cost per step: cautious_nodes * mean_degree * q / 2 (mean-degree proxy),
+  plus sum of cautious nodes' degrees * q / 2 (degree-aware proxy).
+  Units are edge-steps; the model does not calibrate one step to a day.
 
-This avoids per-edge Python loops: each step is 2 matvecs (A @ vec).
+Sparse adjacency keeps neighbour counting proportional to the number of edges.
 """
 from __future__ import annotations
 
@@ -40,11 +42,14 @@ class SimParams:
     prev_thresh: float = 0.02
     p_comply: float = 0.8
     init_infected: int = 10
-    max_steps: int = 500
+    max_steps: int = 5000  # safety limit; unfinished runs have no final_size
     hub_frac: float = 0.1  # top-degree fraction targeted by broadcast_hub
 
 
 def run_coupled(p: SimParams) -> dict:
+    """Simulate to extinction or the safety limit; explicitly flag unfinished runs."""
+    if p.n < 1 or p.max_steps < 1:
+        raise ValueError("n and max_steps must be positive")
     rng = np.random.default_rng(p.seed)
     G = make_graph(p.topology, n=p.n, seed=p.seed)
     A, degree, _ = to_arrays(G)
@@ -65,12 +70,12 @@ def run_coupled(p: SimParams) -> dict:
     hub_mask = None
     if p.rule == "broadcast_hub":
         k = max(1, int(n * p.hub_frac))
-        hub_idx = np.argsort(degree)[-k:]
+        hub_idx = np.argsort(degree, kind="stable")[-k:]
         hub_mask = np.zeros(n, dtype=bool)
         hub_mask[hub_idx] = True
 
-    prev_series, caut_series, inf_series = [], [], []
-    cautious = np.zeros(n, dtype=bool)
+    prev_series, caut_series, caut_degree_series = [], [], []
+    cautious = fear > p.theta
 
     for _ in range(p.max_steps):
         infected = status == 1
@@ -79,8 +84,6 @@ def run_coupled(p: SimParams) -> dict:
             break
         prevalence = n_inf / n
         prev_series.append(prevalence)
-        caut_series.append(float(cautious.sum()))
-        inf_series.append(n_inf)
 
         # 1) behaviour update
         fear = update_fear(
@@ -89,6 +92,8 @@ def run_coupled(p: SimParams) -> dict:
             prev_thresh=p.prev_thresh, p_comply=p.p_comply, hub_mask=hub_mask,
         )
         cautious = fear > p.theta
+        caut_series.append(float(cautious.sum()))
+        caut_degree_series.append(float(degree[cautious].sum()))
 
         # 2) neighbour counts split by infector caution
         inf_f = infected.astype(float)
@@ -110,18 +115,22 @@ def run_coupled(p: SimParams) -> dict:
         e2 = np.clip(e2, 0.0, 1.0)
         p_inf = 1.0 - np.power(e1, c1) * np.power(e2, c2)
         new_inf = sus & (rng.random(n) < p_inf)
-        # recovered infectors cannot infect onward this step is approximated;
-        # ordering effect is negligible at these probabilities.
+        # Both transitions use the disease state at the start of the step:
+        # an infector can transmit and recover during the same update.
 
         status[rec] = 2
         status[new_inf] = 1
 
     prev_arr = np.array(prev_series)
     caut_arr = np.array(caut_series)
-    final_size = float((status != 0).sum() / n)  # ever infected = I+R at end (I=0)
-    base = summarize_run(prev_arr, caut_arr, deg_mean, p.q, n)
+    remaining = int((status == 1).sum())
+    cumulative_size = float((status != 0).sum() / n)
+    base = summarize_run(prev_arr, caut_arr, deg_mean, p.q, n,
+                         np.asarray(caut_degree_series))
     base.update({
-        "final_size": final_size,
+        "final_size": cumulative_size if remaining == 0 else float("nan"),
+        "cumulative_size": cumulative_size,
+        "extinct": remaining == 0, "remaining_infected": remaining,
         "waves": count_waves(prev_arr),
         "oscillation": oscillation_index(prev_arr),
         "topology": p.topology, "rule": p.rule,
