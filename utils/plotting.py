@@ -20,10 +20,10 @@ def phase_heatmap(df: pd.DataFrame, value: str = "final_size",
 
 def tradeoff_curve(df: pd.DataFrame, ax=None):
     ax = ax or plt.gca()
-    agg = df.groupby(["topology", "rule"])[["final_size", "social_cost"]].mean().reset_index()
-    sns.scatterplot(data=agg, x="social_cost", y="final_size",
+    agg = df.groupby(["topology", "rule"])[["final_size", "social_cost_degree"]].mean().reset_index()
+    sns.scatterplot(data=agg, x="social_cost_degree", y="final_size",
                     hue="rule", style="topology", s=100, ax=ax)
-    ax.set_xlabel("mean social cost (edge-days)")
+    ax.set_xlabel("mean degree-aware protective effort (edge-steps)")
     ax.set_ylabel("mean final size")
     ax.set_title("Efficiency tradeoff: final size vs social cost")
     return ax

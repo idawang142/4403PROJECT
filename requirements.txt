@@ -5,5 +5,7 @@ matplotlib>=3.7
 seaborn>=0.12
 scipy>=1.10
 jupyter>=1.0
+ipython>=8.0
+nbformat>=5.0
 tqdm>=4.65
-pytest>=7.0  # test runner; >=7.0 for the pythonpath option in pytest.ini
+pytest>=8.0

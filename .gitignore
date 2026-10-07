@@ -1,5 +1,8 @@
 __pycache__/
 .ipynb_checkpoints/
-data/*.csv
-!data/README.md
+.pytest_cache/
+report/legacy/
+report/*.aux
+report/*.log
+report/*.out
 .venv/

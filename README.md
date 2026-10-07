@@ -1,137 +1,90 @@
 # CITS4403 Research Project
 
-**"Fear is contagious too": behavioural feedback in epidemic spreading**
+**Fear is contagious too: behavioural feedback in epidemic spreading**
 
-| Name | Student ID |
-|------|------------|
-| Ruilei Wang | 24328412 |
-| Xuan Truong Nguyen | 24012326 |
+Ruilei Wang (24328412) and Xuan Truong Nguyen (24012326).
+CITS4403 Computational Modelling, Semester 2 2026.
 
-Unit: CITS4403 Computational Modelling, Semester 2 2026
----
+We compare local observation, social imitation, uniform broadcast and
+hub-targeted broadcast in a network SIR model. The research question is which
+response averts the most infections per unit of protective effort, and how this
+depends on network structure and memory. WS, BA and degree-matched ER networks
+are synthetic; these experiments compare model assumptions rather than predict
+real populations.
 
-## Project Idea
+## Setup and validation
 
-We want to model how *fear of getting sick* changes the course of an epidemic, not just the disease itself spreading, but people's behavioural responses spreading too.
+Use Python 3.x (the regenerated results were produced with Python 3.13).
 
-The basic setup is an SIR (Susceptible–Infected–Recovered) epidemic running on a network, where infected nodes can also spread "risk awareness" to their neighbours. Nodes that become risk-aware temporarily reduce their contacts (cut edges), which in turn slows transmission. The interesting question is: which specific way that fear/awareness spreads is most effective at reducing the epidemic, and at what cost to social interaction?
-
-This is a coupled-contagion problem, two things spreading on the same network simultaneously.
-
----
-
-## Research Question
-
-> **Which behavioural feedback rule (local imitation of neighbours' precautions, direct observation of sick contacts, or a broadcast nudge triggered at a prevalence threshold) minimises epidemic final size per unit of social cost (total contacts forgone)?**
-
-### Hypotheses
-
-- **H1:** Intermediate fear-memory decay (how fast people stop being cautious) produces multi-wave dynamics rather than a single epidemic peak.
-- **H2:** On scale-free networks (BA-type, with hubs), hub-targeted nudges dominate; on homogeneous networks (WS-type) they don't matter as much.
-- **H3:** Imitation-based behaviour tends to overshoot and produce oscillations rather than a clean suppression.
-
----
-
-## Planned Modelling Approach
-
-At this stage (end of Week 5), we have covered:
-
-- **Complex systems** (W1): local rules → emergent global behaviour, exactly what we're modelling.
-- **Graph theory** (W2–W3): network structure matters a lot for how contagion spreads.
-  - Erdős–Rényi (ER) as a homogeneous baseline
-  - Watts–Strogatz (WS) for small-world / high-clustering networks
-  - Barabási–Albert (BA) for scale-free / hub-dominated networks
-- **Cellular Automata** (W4–W5): demonstrated how simple local update rules produce complex emergent patterns. The same principle motivates our behavioural rules.
-
----
-
-## Network Topologies to Test
-
-| Topology | Why |
-|----------|-----|
-| Watts-Strogatz (WS) | Small-world, high clustering, typical of social/friendship networks |
-| Barabasi-Albert (BA) | Scale-free, hub-driven, tests whether hub-targeting strategies matter |
-| Empirical (TBD) | A real-world snapshot to ground the model, likely the SNAP Facebook dataset used in W3 |
-
----
-### Update — 3 October 2026
-
-The table above records our original plan. Our final network selection is **WS, BA and ER**, with ER replacing the proposed empirical Facebook network.
-
-| Final topology | Default configuration |
-|----------------|-----------------------|
-| Watts–Strogatz (WS) | k=6, rewiring probability=0.1 |
-| Barabási–Albert (BA) | m=3, giving a mean degree approaching 6 |
-| Erdős–Rényi (ER) | p=6/(n-1), giving an expected mean degree of 6 |
-
-We chose synthetic networks for reproducibility, approximate mean-degree matching and manageable runtime.
-
-**Limitation:** We have not validated the model on empirical contact networks. These synthetic networks do not capture all real-world contact patterns, so the findings should not be treated as direct predictions for real populations.
-
-## Preliminary Metrics
-
-- **Final size**: what fraction of the population was ever infected
-- **Peak prevalence**: highest simultaneous infection count
-- **Time to peak**
-- **Social cost**: total contact-hours forgone due to behavioural changes
-- **Wave count**: does the epidemic resolve in one wave or multiple?
-
-The target "hero figure" is a **phase diagram** plotting epidemic final size against behaviour coupling strength × fear memory decay, for each of the three feedback rules.
-
----
-
-## Planned Experiments (Draft)
-
-1. Grid sweep over fear-coupling strength × memory-decay rate for each of the 3 behavioural rules.
-2. Run each parameter combination on all 3 network topologies.
-3. 100+ independent random seeds per cell to average out stochasticity.
-4. Compare final-size / social-cost tradeoff curves across rules.
-
----
-
-## Work Split (Tentative)
-
-- **Ruilei Wang:** epidemic engine (SIR dynamics), network generation and topology setup
-- **Xuan Truong Nguyen:** behavioural feedback modules (the 3 rules), statistics/analysis pipeline
-
-Both partners contribute to experimental design and report writing.
-
----
-
-## Current Status
-
-- [x] Project idea agreed on
-- [x] GitHub repository created
-- [ ] Background reading on coupled contagion literature
-- [ ] Basic SIR-on-network prototype (post W7 lab)
-- [ ] Behavioural rule implementations
-- [ ] Experimental sweep setup
-
----
-
-## Setup & Usage (scaffold v0.1)
-
-```bash
-pip install -r requirements.txt
+~~~bash
+python -m pip install -r requirements.txt
 python -m pytest tests/ -q
-```
+~~~
 
-Quick run:
+Tests cover transmission/recovery boundaries, zero initial infections,
+termination flags, initial innovators, cost timing, degree-aware accounting,
+sparse/dense equivalence, determinism and complete sweep cache identities.
 
-```python
+## Reproduce the submission
+
+Run from the repository root:
+
+~~~bash
+python -m src.run_sweeps --workers 4
+python -m src.run_analysis
+~~~
+
+The first command runs 9,090 pilot, 3,600 targeting, 600 transmission and 80
+mean-field configurations. It resumes matching completed runs. Use
+--experiment pilot, zoom, beta or mean-field to run one component, and
+--workers 1 for sequential execution. Corrected inputs live in data/.
+The analysis notebook prints all results, writes summary CSVs and regenerates
+the six figures in report/figs/. It works from the root or notebooks/.
+
+Each CSV stores the complete simulation configuration, a model-source
+fingerprint and a configuration key. Legacy caches without this provenance are
+rejected. Changing model source requires regenerating inputs; the analysis
+notebook rejects outputs from a different model version.
+
+data/provenance.json records the numerical-library versions. Earlier outputs
+are preserved under data/legacy/ and Git history;
+they are historical records and are not inputs to the corrected report.
+The root cits4403-groupproject.ipynb is a Kaggle-specific runner and requires
+attaching the current project as a dataset. The local commands above are the
+submission's primary reproduction procedure.
+
+## Model and measurement conventions
+
+The graph is fixed. Caution reduces transmission probability at both endpoints;
+the simulator does not delete edges. Disease transitions use the start-of-step
+disease state, while transmission uses newly updated caution.
+
+Runs stop at extinction, subject to a 5,000-step safety limit. Returned
+extinct and remaining_infected fields distinguish completed epidemics.
+For unfinished runs, final_size is NaN and cumulative_size reports the
+fraction infected so far. The sweep runner rejects unfinished epidemics.
+
+`social_cost` retains the original mean-degree proxy. `social_cost_degree`
+weights each cautious node by its actual degree and is the primary report
+measure. Both count protective effort until disease extinction, in edge-steps,
+using an endpoint-accounting factor of one half; neither is an exact count of
+removed contacts or economic loss. Steps are not calibrated to days.
+Efficiency converts infected fractions to infection counts using N.
+
+Imitation keeps the original half-decay rule; the same nominal delta does not
+imply equal memory across response rules. The oscillation index is the
+coefficient of variation of prevalence, which cannot establish overshoot.
+
+## Quick simulation
+
+~~~python
 from src.simulation import SimParams, run_coupled
-out = run_coupled(SimParams(topology="ws", n=500, seed=0, rule="observation", alpha=0.8, delta=0.1))
-print(out["final_size"], out["peak"], out["waves"], out["social_cost"])
-```
 
-Pilot sweep (cached, parallel):
+out = run_coupled(SimParams(topology="ws", n=500, seed=0,
+                            rule="observation", alpha=0.8, delta=0.1))
+print(out["extinct"], out["final_size"], out["social_cost_degree"])
+~~~
 
-```python
-from src.experiments import grid_configs, run_sweep
-cfgs = grid_configs(topologies=("ws","ba"), rules=("observation","imitation","broadcast"),
-                    alphas=(0.0,0.5,1.0), deltas=(0.0,0.1,0.3), seeds=range(5), n=300)
-df = run_sweep(cfgs, "data/pilot.csv")
-```
-
-Notebooks: `notebooks/01_validation.ipynb`, `02_sweep.ipynb`, `03_figures.ipynb`.
-Layout follows rubric spec: `src/ utils/ data/ notebooks/ requirements.txt README.md`.
+Main functions are in src/; plotting helpers are in utils/. The scientific
+report is report/report.tex and report/report.pdf. Compile from report/
+with two passes of pdflatex -halt-on-error report.tex when using local LaTeX.
