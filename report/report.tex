@@ -6,7 +6,8 @@
 \usepackage[numbers,sort]{natbib}
 \usepackage{booktabs}
 \usepackage{caption}
-\captionsetup{font=small,labelfont=bf}
+\captionsetup{font=normalsize,labelfont=bf}
+\renewcommand{\abstractname}{\normalsize Abstract}
 \setlength{\parskip}{0.6em}
 \setlength{\parindent}{0em}
 
@@ -18,6 +19,7 @@
 \maketitle
 
 \begin{abstract}
+\normalsize
 We couple a network SIR epidemic with a second contagion, risk perception,
 and compare three behavioural-feedback rules head to head: local observation
 of sick contacts, social imitation of cautious neighbours, and global
@@ -144,6 +146,7 @@ simulation parameter and a fingerprint of the model source.
 \texttt{data/} holds the corrected CSVs and provenance; earlier outputs are
 retained as legacy data and are not used in the analysis:
 \url{https://github.com/idawang142/4403PROJECT}.
+An \href{https://github.com/idawang142/4403PROJECT/blob/main/notebooks/04_analysis.ipynb}{executed analysis notebook} provides the runnable simulations and results.
 
 \section{Results}
 \paragraph{Observation has the highest grid-average efficiency.}
@@ -166,7 +169,7 @@ effective by excluding later infections and protective effort.
 Cost is the degree-aware proxy in edge-steps; efficiency is infections
 averted per edge-step, shown in units of $10^{-3}$.}
 \label{tab:eff}
-{\small
+{\normalsize
 \begin{tabular}{llccc}
 \toprule
 Topology & Rule & Final size & Degree-aware cost & Efficiency ($\times10^{-3}$) \\
